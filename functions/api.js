@@ -1,47 +1,19 @@
 const express = require('express');
-const serverless = require('serverless-http');
-const app = express();
+const serverless = require("serverless-http");
+const errorHandler = require('./middleware/errorHandler');
+const app =express();
+const connectDB = require('./confiq/dbConnection');
+const dotenv = require('dotenv').config();
+const port = "5000";
 const router = express.Router();
-// const port = 3000
-
-let records = [];
-
-
-router.get('/', (req, res) => {
-  res.send('App is running..');
+app.use(express.json());
+connectDB();
+app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/user', require('./routes/userRouter'));
+app.use('/test',function(req,res){res.send('Server code working fine')});
+app.use(errorHandler);
+app.listen(port, ()=>{
+    console.log("Server is running on port", port );
 });
-
-router.post('/add', (req, res) => {
-  res.send('New record added.');
-});
-
-router.delete('/', (req, res) => {
-  res.send('Deleted existing record');
-});
-
-router.put('/', (req, res) => {
-  res.send('Updating existing record');
-});
-
-
-router.get('/demo', (req, res) => {
-  res.json([
-    {
-      id: '001',
-      name: 'Aayush',
-    },
-    {
-      id: '002',
-      name: 'rohit',
-    },
-    {
-      id: '003',
-      name: 'Mohit',
-    },
-  ]);
-});
-// app.listen(port, () => {
-//   console.log(`Example app listening on port ${port}`)
-// })
-app.use('/.netlify/functions/api', router);
+app.use('/functions', router);
 module.exports.handler = serverless(app);
