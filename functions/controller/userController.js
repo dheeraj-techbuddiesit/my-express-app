@@ -1,6 +1,6 @@
 const asyncHandler = require("async-error-handler");
 const user = require("../models/userModal");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -17,13 +17,13 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     password,
   });
-  const salt = await bcrypt.genSalt(10);
-  newUser.password = await bcrypt.hash(password, salt);
+  const salt = await bcrypt.genSaltSync(10);
+  newUser.password = await bcrypt.hashSync(password, salt);
   await newUser.save();
   res.status(200).json({ message: "User register successfull" });
 });
 
-const userLogin = asyncHandler(async (req, res) => {
+const userLogin = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(500).json({ message: "All field required" });
@@ -32,7 +32,7 @@ const userLogin = asyncHandler(async (req, res) => {
   if (!userExist) {
     return res.status(500).json({ message: "User not exist" });
   }
-  const isMatch = await bcrypt.compare(password, userExist.password);
+  const isMatch = await bcrypt.compareSync(password, userExist.password);
   if (!isMatch) {
     return res.status(500).json({ message: "Email or password Invalid" });
   }
@@ -42,14 +42,23 @@ const userLogin = asyncHandler(async (req, res) => {
       email: userExist.email,
       id: userExist.id,
     },
-    process.env.ACCESS_TOKEN_SECRET,
+    "mycontact1234",
     { expiresIn: "1Years" }
   );
   res.status(200).json({token: accessToken});
-});
+};
 
 const userData = asyncHandler(async (req, res) => {
-  res.status(200).json(req.user);
+  const userExist = await user.findById(req.user.id);
+  if(!userExist){
+     res.status(404).json({message:"User not found"});
+  }else {
+    const userData = {
+      Name : userExist.username,
+      Email : userExist.email
+    }
+     res.status(200).json({data:userData});
+  } 
 });
 
 module.exports = { registerUser, userLogin, userData };
